@@ -13,8 +13,6 @@
     "module": "Node16",
     "moduleResolution": "Node16",
     "target": "ES2022",
-    
-    "typeRoots": ["./src/types/", "./node_modules/@types"],
 
     // Other Outputs
     "sourceMap": true,
@@ -33,9 +31,9 @@
 
     // Recommended Options
     "strict": true,
+    "noImplicitAny": false,
     "verbatimModuleSyntax": false,
     "isolatedModules": true,
-    "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
     "esModuleInterop": true,

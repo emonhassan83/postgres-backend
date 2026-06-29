@@ -20,7 +20,7 @@ async function main(): Promise<void> {
   server.listen(port, '0.0.0.0', () => {
     console.log(`🚀 Server ready!`);
     console.log(`🏠 Local:   http://localhost:${port}`);
-    console.log(`🌐 Network: http://10.10.28.24:${port}`);
+    console.log(`🌐 Network: http://127.0.0.1:${port}`);
   });
 
   // @ts-ignore

@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { PrismaClientKnownRequestError, PrismaClientValidationError } from "@prisma/client/runtime/library";
 import { Socket } from "socket.io";
 
 import { TAckFn } from "../interface/socket.interface";
@@ -17,7 +18,7 @@ export const handleSocketError = (err: any, socket: Socket, ack?: TAckFn) => {
   let error = err;
 
   // ==================== Prisma Client Errors ====================
-  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+  if (err instanceof PrismaClientKnownRequestError) {
     if (err.code === "P2002") {
       status = 409;
       const fields = (err.meta?.target as string[])?.join(', ') || 'field';
@@ -44,7 +45,7 @@ export const handleSocketError = (err: any, socket: Socket, ack?: TAckFn) => {
     }
   }
 
-  else if (err instanceof Prisma.PrismaClientValidationError) {
+  else if (err instanceof PrismaClientValidationError) {
     status = 422;
     message = "Validation error!";
     error = {

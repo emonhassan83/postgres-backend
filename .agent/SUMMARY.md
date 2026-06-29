@@ -1,3 +1,29 @@
+Date/Session: 2026-06-29 (PostgreSQL Read-Replica & Build Setup)
+
+Completed Tasks:
+- Set up a master-replica PostgreSQL architecture in `docker-compose.yaml`.
+- Configured environment variables (.env) for `server`, `worker`, and `corn` packages to connect to PostgreSQL instead of MongoDB.
+- Converted bash build script line endings to LF to ensure compatibility in Docker environments.
+- Fully aligned TypeScript versions across the pnpm monorepo.
+- Refactored `worker` to save notifications using Prisma Client instead of MongoDB.
+- Created compatibility layers for legacy Mongoose schema imports in `server`.
+
+Key Changes:
+- [docker-compose.yaml](file:///d:/bd-calling/explores_tech/postgres-backend/docker-compose.yaml)
+- [server/.env](file:///d:/bd-calling/explores_tech/postgres-backend/server/.env)
+- [worker/.env](file:///d:/bd-calling/explores_tech/postgres-backend/worker/.env)
+- [corn/.env](file:///d:/bd-calling/explores_tech/postgres-backend/corn/.env)
+- [server/package.json](file:///d:/bd-calling/explores_tech/postgres-backend/server/package.json)
+- [worker/package.json](file:///d:/bd-calling/explores_tech/postgres-backend/worker/package.json)
+- [worker/src/app/workers/notification.worker.ts](file:///d:/bd-calling/explores_tech/postgres-backend/worker/src/app/workers/notification.worker.ts)
+- [worker/src/app/configs/db.configs.ts](file:///d:/bd-calling/explores_tech/postgres-backend/worker/src/app/configs/db.configs.ts)
+- [corn/src/app/configs/db.configs.ts](file:///d:/bd-calling/explores_tech/postgres-backend/corn/src/app/configs/db.configs.ts)
+
+Pending/Next Steps:
+- Deploy the Docker containers and verify streaming replication status.
+
+==================================================
+
 Date/Session: 2026-06-29 (Update)
 
 Completed Tasks:

@@ -19,7 +19,7 @@ const createNotificationIntoDB = async (traceId: string, payload: INotification)
       receiverId,
       referenceId,
       modelType: payload.modelType as any,
-      message: payload.message,
+      message: payload.message || '',
       description: payload.description || '',
       date: payload.date || new Date(),
       read: payload.read || false,
@@ -51,7 +51,7 @@ const sendGeneralNotificationIntoDB = async (traceId: string, payload: INotifica
     receiverId: userId,
     referenceId,
     modelType: modelType as any,
-    message,
+    message: message || '',
     description: description || '',
   }));
 

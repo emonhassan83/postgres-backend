@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
-import { Error as MongooseError } from 'mongoose';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError, PrismaClientValidationError } from '@prisma/client/runtime/library';
 
 import { IErrorMessage } from '@/app/@types/system.types';
 import { env } from '@/app/configs/env.configs';
@@ -25,7 +25,7 @@ export const globalErrorMiddleware = (
   let errorMessages: IErrorMessage[] = [];
 
   // Handle Prisma Known Request Errors
-  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+  if (err instanceof PrismaClientKnownRequestError) {
     if (err.code === 'P2002') {
       code = 409;
       const fields = (err.meta?.target as string[])?.join(', ') || 'field';
@@ -38,7 +38,7 @@ export const globalErrorMiddleware = (
     }
   }
   // Handle Prisma Validation Errors
-  else if (err instanceof Prisma.PrismaClientValidationError) {
+  else if (err instanceof PrismaClientValidationError) {
     code = 400;
     message = 'Database validation error';
     errorMessages = [{ path: '', message: err.message }];
@@ -54,7 +54,7 @@ export const globalErrorMiddleware = (
   }
   // Handle ValidationError (e.g., Mongoose)
   else if (err.name === 'ValidationError') {
-    const simplifiedError = handleValidationError(err as MongooseError.ValidationError, traceId);
+    const simplifiedError = handleValidationError(err as any, traceId);
     code = simplifiedError.code;
     message = `${simplifiedError.errorMessages
       .map((err) => err.message)

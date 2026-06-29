@@ -6,6 +6,10 @@ COPY corn/package.json ./
 COPY corn/tsconfig.json ./
 RUN corepack enable && pnpm install
 
+# Copy prisma schema and generate Prisma Client
+COPY prisma/ ./prisma/
+RUN pnpm exec prisma generate --schema=./prisma/schema.prisma
+
 # Copy corn sources after pnpm install
 COPY corn/ ./
 

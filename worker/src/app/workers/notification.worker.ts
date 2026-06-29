@@ -3,7 +3,7 @@ import { Job, Worker } from 'bullmq';
 import logger from '@/app/configs/logger.configs';
 import { getRedisClient } from '@/app/configs/redis.configs';
 import { requestContext } from '@/app/configs/requestContext.configs';
-import { Notification } from '@/app/schemas/modules/notification/notification.schema';
+import prisma from '@/app/configs/db.configs';
 import { sendPushNotification, sendBatchPushNotification } from '@/app/utils/push-notification.service';
 
 // ─── Job payload shape (must match what server enqueues) ───────────────────
@@ -29,13 +29,15 @@ const saveToDatabase = async (
 ): Promise<void> => {
   const { userId, title, message, data } = jobData;
 
-  await Notification.create({
-    receiver: userId,
-    message: title,
-    description: message,
-    modelType: data?.modelType ?? 'User',
-    reference: data?.reference ?? null,
-    read: false,
+  await prisma.notification.create({
+    data: {
+      receiverId: userId,
+      message: title,
+      description: message,
+      modelType: (data?.modelType ?? 'User') as any,
+      referenceId: data?.reference ?? null,
+      read: false,
+    },
   });
 };
 
@@ -109,13 +111,15 @@ export const createNotificationWorker = (): Worker => {
               // Save notification record for each user
               if (userIds && userIds.length > 0) {
                 const savePromises = userIds.map((userId) => 
-                  Notification.create({
-                    receiver: userId,
-                    message: jobData.title,
-                    description: jobData.message,
-                    modelType: jobData.data?.modelType ?? 'User',
-                    reference: jobData.data?.reference ?? null,
-                    read: false,
+                  prisma.notification.create({
+                    data: {
+                      receiverId: userId,
+                      message: jobData.title,
+                      description: jobData.message,
+                      modelType: (jobData.data?.modelType ?? 'User') as any,
+                      referenceId: jobData.data?.reference ?? null,
+                      read: false,
+                    }
                   })
                 );
                 await Promise.all(savePromises);

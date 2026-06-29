@@ -1,10 +1,8 @@
-import { Error } from 'mongoose';
-
 import { IErrorMessage } from '@/app/@types/system.types';
 
-const handleValidationError = (error: Error.ValidationError, traceId?: string) => {
-  const errorMessages: IErrorMessage[] = Object.values(error.errors).map(
-    (el: Error.ValidatorError | Error.CastError) => {
+const handleValidationError = (error: any, traceId?: string) => {
+  const errorMessages: IErrorMessage[] = Object.values(error.errors || {}).map(
+    (el: any) => {
       return {
         path: el.path,
         message: el.message,

@@ -1,9 +1,9 @@
 name: postgress-backend
 
 services:
-  postgres:
+  postgres-master:
     image: postgres:15-alpine
-    container_name: postgress_backend_postgres
+    container_name: postgress_backend_postgres_master
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -12,7 +12,48 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_master_data:/var/lib/postgresql/data
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=replica"
+      - "-c"
+      - "max_wal_senders=10"
+      - "-c"
+      - "max_replication_slots=10"
+      - "-c"
+      - "hot_standby=on"
+    networks:
+      - postgress_backend_net
+
+  postgres-replica:
+    image: postgres:15-alpine
+    container_name: postgress_backend_postgres_replica
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_password}
+      POSTGRES_DB: ${POSTGRES_DB:-postgress_backend}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres_password}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_replica_data:/var/lib/postgresql/data
+    entrypoint:
+      - "/bin/sh"
+      - "-c"
+      - |
+        if [ ! -s /var/lib/postgresql/data/PG_VERSION ]; then
+          echo "Initial replication setup..."
+          until pg_basebackup -h postgres-master -D /var/lib/postgresql/data -U postgres -v -P -R -X stream; do
+            echo "Waiting for master to be ready..."
+            sleep 1
+          done
+        fi
+        exec docker-entrypoint.sh postgres -c hot_standby=on
+    depends_on:
+      postgres-master:
+        condition: service_started
     networks:
       - postgress_backend_net
 
@@ -39,7 +80,7 @@ services:
     env_file:
       - ./server/.env
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres_password@postgres:5432/postgress_backend?schema=public}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres_password@postgres-master:5432/postgress_backend?schema=public}
       REDIS_HOST: redis
       REDIS_PASSWORD: ${REDIS_PASSWORD:-myStrongRedisPassword}
       REDIS_PORT: 6379
@@ -49,7 +90,7 @@ services:
     volumes:
       - ./server/src:/usr/src/app/src
     depends_on:
-      postgres:
+      postgres-master:
         condition: service_started
       redis:
         condition: service_started
@@ -65,7 +106,7 @@ services:
     env_file:
       - ./worker/.env
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres_password@postgres:5432/postgress_backend?schema=public}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres_password@postgres-master:5432/postgress_backend?schema=public}
       REDIS_HOST: redis
       REDIS_PASSWORD: ${REDIS_PASSWORD:-myStrongRedisPassword}
       REDIS_PORT: 6379
@@ -73,7 +114,7 @@ services:
       - ./worker/src:/app/src
       - worker_node_modules:/app/node_modules
     depends_on:
-      postgres:
+      postgres-master:
         condition: service_started
       redis:
         condition: service_started
@@ -89,7 +130,7 @@ services:
     env_file:
       - ./corn/.env
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres_password@postgres:5432/postgress_backend?schema=public}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres_password@postgres-master:5432/postgress_backend?schema=public}
       REDIS_HOST: redis
       REDIS_PASSWORD: ${REDIS_PASSWORD:-myStrongRedisPassword}
       REDIS_PORT: 6379
@@ -97,7 +138,7 @@ services:
       - ./corn/src:/app/src
       - corn_node_modules:/app/node_modules
     depends_on:
-      postgres:
+      postgres-master:
         condition: service_started
       redis:
         condition: service_started
@@ -124,7 +165,8 @@ services:
       - postgress_backend_net
 
 volumes:
-  postgres_data:
+  postgres_master_data:
+  postgres_replica_data:
   redis_data:
   server_node_modules:
   worker_node_modules:

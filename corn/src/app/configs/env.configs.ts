@@ -3,7 +3,7 @@ import { getEnv } from '@/app/utils/env.utils';
 
 export const env: TEnv = {
   NODE_ENV: getEnv('NODE_ENV'),
-  MONGODB_URI: getEnv('MONGODB_URI'),
+  DATABASE_URL: getEnv('DATABASE_URL'),
   SMTP_HOST: getEnv('SMTP_HOST'),
   SMTP_PORT: Number(getEnv('SMTP_PORT')),
   SMTP_USER: getEnv('SMTP_USER'),
