@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
-import { PrismaClientKnownRequestError, PrismaClientValidationError } from '@prisma/client/runtime/library';
 
 import { IErrorMessage } from '@/app/@types/system.types';
 import { env } from '@/app/configs/env.configs';
@@ -25,7 +24,7 @@ export const globalErrorMiddleware = (
   let errorMessages: IErrorMessage[] = [];
 
   // Handle Prisma Known Request Errors
-  if (err instanceof PrismaClientKnownRequestError) {
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
     if (err.code === 'P2002') {
       code = 409;
       const fields = (err.meta?.target as string[])?.join(', ') || 'field';
@@ -38,7 +37,7 @@ export const globalErrorMiddleware = (
     }
   }
   // Handle Prisma Validation Errors
-  else if (err instanceof PrismaClientValidationError) {
+  else if (err instanceof Prisma.PrismaClientValidationError) {
     code = 400;
     message = 'Database validation error';
     errorMessages = [{ path: '', message: err.message }];
