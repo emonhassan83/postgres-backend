@@ -1,0 +1,15 @@
+FROM node:20-alpine
+WORKDIR /app
+RUN apk add --no-cache dumb-init
+
+COPY nodemailer/package.json ./
+COPY nodemailer/tsconfig.json ./
+RUN corepack enable && pnpm install
+
+# Copy nodemailer sources after pnpm install
+COPY nodemailer/ ./
+
+EXPOSE 3000
+
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+CMD ["pnpm", "run", "dev"]

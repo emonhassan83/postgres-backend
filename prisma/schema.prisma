@@ -1,0 +1,86 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  admin
+  user
+}
+
+enum UserStatus {
+  pending
+  active
+  blocked
+}
+
+enum RegisterWith {
+  google
+  apple
+  credentials
+}
+
+enum NotificationModelType {
+  Auth
+  User
+  Payment
+}
+
+model User {
+  id                        String                @id @default(uuid())
+  name                      String
+  email                     String                @unique
+  password                  String
+  fcmToken                  String?
+  profileAvatar             String?
+  countryCode               String?
+  phone                     String?
+  address                   String?
+  latitude                  Float?
+  longitude                 Float?
+  timeZone                  String                @default("UTC")
+  role                      UserRole              @default(user)
+  registerWith              RegisterWith          @default(credentials)
+  status                    UserStatus            @default(active)
+  needsPasswordChange       Boolean               @default(false)
+  passwordChangedAt         DateTime?
+  isSignUpOtpVerified       Boolean               @default(false)
+  isLoginOTPVerified        Boolean               @default(false)
+  isResetPasswordVerified   Boolean               @default(false)
+  isChangeEmailOtpVerified  Boolean               @default(false)
+  isChangePhoneOtpVerified  Boolean               @default(false)
+  isLegalTermsAccepted      Boolean
+  expireAt                  DateTime?
+  isDeleted                 Boolean               @default(false)
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
+  notifications             Notification[]        @relation("UserNotifications")
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+}
+
+model Setting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value Json
+}
+
+model Notification {
+  id          String                @id @default(uuid())
+  receiverId  String
+  receiver    User                  @relation("UserNotifications", fields: [receiverId], references: [id])
+  referenceId String?
+  modelType   NotificationModelType
+  message     String
+  description String                @default("")
+  date        DateTime              @default(now())
+  read        Boolean               @default(false)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+}

@@ -1,0 +1,21 @@
+# Ignore local/node_modules and build artifacts to keep build context small
+node_modules
+**/node_modules
+
+# pnpm store / caches
+.pnpm-store
+pnpm-store
+.pnpm-debug.log
+
+# Git metadata / editor settings
+.git
+.gitignore
+.vscode
+.idea
+
+# OS / temp
+.DS_Store
+tmp
+dist
+logs
+*.log

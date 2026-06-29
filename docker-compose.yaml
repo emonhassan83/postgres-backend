@@ -1,0 +1,136 @@
+name: postgress-backend
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgress_backend_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_password}
+      POSTGRES_DB: ${POSTGRES_DB:-postgress_backend}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - postgress_backend_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: postgress_backend_redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-myStrongRedisPassword}
+    expose:
+      - "6379"
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - postgress_backend_net
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile.dev
+    container_name: postgress_backend_server
+    restart: unless-stopped
+    env_file:
+      - ./server/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres_password@postgres:5432/postgress_backend?schema=public}
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-myStrongRedisPassword}
+      REDIS_PORT: 6379
+      STRIPE_API_SECRET_KEY: ${STRIPE_API_SECRET_KEY:-}
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./server/src:/usr/src/app/src
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - postgress_backend_net
+
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile.dev
+    container_name: postgress_backend_worker
+    restart: unless-stopped
+    env_file:
+      - ./worker/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres_password@postgres:5432/postgress_backend?schema=public}
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-myStrongRedisPassword}
+      REDIS_PORT: 6379
+    volumes:
+      - ./worker/src:/app/src
+      - worker_node_modules:/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - postgress_backend_net
+
+  corn:
+    build:
+      context: .
+      dockerfile: corn/Dockerfile.dev
+    container_name: postgress_backend_corn
+    restart: unless-stopped
+    env_file:
+      - ./corn/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres_password@postgres:5432/postgress_backend?schema=public}
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-myStrongRedisPassword}
+      REDIS_PORT: 6379
+    volumes:
+      - ./corn/src:/app/src
+      - corn_node_modules:/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - postgress_backend_net
+
+  nodemailer:
+    build:
+      context: .
+      dockerfile: nodemailer/Dockerfile.dev
+    container_name: postgress_backend_nodemailer
+    restart: unless-stopped
+    env_file:
+      - path: ./nodemailer/.env
+        required: false
+    environment:
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./nodemailer/src:/app/src
+      - nodemailer_node_modules:/app/node_modules
+    networks:
+      - postgress_backend_net
+
+volumes:
+  postgres_data:
+  redis_data:
+  server_node_modules:
+  worker_node_modules:
+  corn_node_modules:
+  nodemailer_node_modules:
+
+networks:
+  postgress_backend_net:
+    name: postgress_backend_net
