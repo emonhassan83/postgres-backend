@@ -1,14 +1,8 @@
 import admin from 'firebase-admin';
-import { initializeApp, cert, getApps } from 'firebase-admin/app'
-import { getMessaging } from 'firebase-admin/messaging'
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getMessaging } from 'firebase-admin/messaging';
 
 import { getFirebaseCredentials } from '@/app/utils/system.utils';
-
-admin.initializeApp({
-  credential: admin.credential.cert(
-    getFirebaseCredentials() as admin.ServiceAccount
-  ),
-});
 
 // Check if a Firebase instance has already been initialized globally
 const apps = getApps();

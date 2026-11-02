@@ -1,17 +1,23 @@
-import admin from 'firebase-admin';
+import { type App, initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getMessaging } from 'firebase-admin/messaging';
 
 import { env } from '@/app/configs/env.configs';
 
 // Lazy singleton — initialised once on first push attempt
-let _app: admin.app.App | null = null;
+let _app: App | null = null;
 
-const getFirebaseApp = (): admin.app.App => {
+const getFirebaseApp = (): App => {
   if (!_app) {
-    const serviceAccount = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT_JSON);
-    _app = admin.initializeApp(
-      { credential: admin.credential.cert(serviceAccount) },
-      'worker-push-notifications'
-    );
+    const existing = getApps().find((a) => a.name === 'worker-push-notifications');
+    if (existing) {
+      _app = existing;
+    } else {
+      const serviceAccount = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT_JSON || '{}');
+      _app = initializeApp(
+        { credential: cert(serviceAccount) },
+        'worker-push-notifications'
+      );
+    }
   }
   return _app;
 };
@@ -33,15 +39,13 @@ export const sendPushNotification = async (
 ): Promise<TPushResult> => {
   const { fcmToken, title, body, data } = payload;
 
-  const messageId = await getFirebaseApp()
-    .messaging()
-    .send({
-      token: fcmToken,
-      notification: { title, body },
-      data,
-      android: { priority: 'high' },
-      apns: { payload: { aps: { sound: 'default', badge: 1 } } },
-    });
+  const messageId = await getMessaging(getFirebaseApp()).send({
+    token: fcmToken,
+    notification: { title, body },
+    data,
+    android: { priority: 'high' },
+    apns: { payload: { aps: { sound: 'default', badge: 1 } } },
+  });
 
   return { success: true, messageId };
 };
@@ -51,17 +55,15 @@ export const sendBatchPushNotification = async (
 ): Promise<TPushResult[]> => {
   const messageIds = await Promise.all(
     notifications.map(({ fcmToken, title, body, data }) =>
-      getFirebaseApp()
-        .messaging()
-        .send({
-          token: fcmToken,
-          notification: { title, body },
-          data,
-          android: { priority: 'high' },
-          apns: { payload: { aps: { sound: 'default', badge: 1 } } },
-        })
+      getMessaging(getFirebaseApp()).send({
+        token: fcmToken,
+        notification: { title, body },
+        data,
+        android: { priority: 'high' },
+        apns: { payload: { aps: { sound: 'default', badge: 1 } } },
+      })
     )
   );
 
-  return messageIds.map((messageId) => ({ success: true, messageId }));
+  return messageIds.map((messageId: string) => ({ success: true, messageId }));
 };
